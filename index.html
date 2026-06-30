@@ -549,7 +549,7 @@
     <div class="menu-card">
       <div class="menu-title">ひらがなさがし</div>
 
-      <div class="mode-title">むずかしさをえらぼう</div>
+      <div class="mode-title">むずかしさを　えらぼう</div>
 
       <div class="mode-buttons">
         <button class="mode-btn selected" id="modeOne" onclick="selectMode('one')">1もじ</button>
@@ -578,7 +578,7 @@
       <div class="instruction" id="instruction"></div>
     </div>
 
-    <div class="message" id="message">同じカードを3つタップしよう</div>
+    <div class="message" id="message">おなじ　カードを　3つ　えらぼう</div>
 
     <div class="board" id="board"></div>
   </div>
@@ -776,7 +776,7 @@
       practicePage.style.display = "none";
       resultScreen.style.display = "none";
       menuPage.style.display = "flex";
-      message.textContent = "同じカードを3つタップしよう";
+      message.textContent = "おなじ　カードを　3つ　えらぼう";
     }
 
     function showQuestion() {
@@ -785,8 +785,8 @@
       locked = false;
 
       questionNumber.textContent = currentQuestionIndex + 1;
-      instruction.innerHTML = `<span class="inline-target">${escapeHtml(q.target)}</span>を3つ探そう`;
-      message.textContent = "同じカードを3つタップしよう";
+      instruction.innerHTML = `<span class="inline-target">${escapeHtml(q.target)}</span>を3つ　さがそう`;
+      message.textContent = "おなじ　カードを　3つ　えらぼう";
 
       board.innerHTML = "";
 
@@ -823,7 +823,7 @@
         }
       } else {
         card.classList.add("wrong");
-        message.textContent = "ちがうよ。もう一度さがそう";
+        message.textContent = "ちがうよ。もう　いちど　さがそう";
 
         setTimeout(() => {
           card.classList.remove("wrong");
