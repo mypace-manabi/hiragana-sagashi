@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ひらがなさがし</title>
+
+  <!-- Excelファイルを読み込むためのライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -48,16 +52,8 @@
       font-size: 44px;
       font-weight: 900;
       color: #2563eb;
-      margin-bottom: 10px;
+      margin-bottom: 26px;
       letter-spacing: 0.06em;
-    }
-
-    .menu-subtitle {
-      font-size: 24px;
-      font-weight: 800;
-      color: #475569;
-      margin-bottom: 18px;
-      line-height: 1.5;
     }
 
     .mode-title {
@@ -75,7 +71,7 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
     }
 
     .mode-btn {
@@ -105,13 +101,6 @@
       transform: translateY(4px);
     }
 
-    .menu-note {
-      font-size: 21px;
-      font-weight: 800;
-      color: #64748b;
-      margin-bottom: 22px;
-    }
-
     .start-btn {
       border: none;
       border-radius: 999px;
@@ -123,6 +112,20 @@
       cursor: pointer;
       box-shadow: 0 7px 0 #c2410c;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    .start-btn:disabled {
+      background: #94a3b8;
+      box-shadow: 0 7px 0 #64748b;
+      cursor: not-allowed;
+    }
+
+    .load-status {
+      font-size: 18px;
+      font-weight: 800;
+      color: #475569;
+      margin-top: 18px;
+      line-height: 1.5;
     }
 
     .practice-page {
@@ -429,10 +432,6 @@
 
       .menu-title {
         font-size: 34px;
-      }
-
-      .menu-subtitle {
-        font-size: 20px;
         margin-bottom: 16px;
       }
 
@@ -507,8 +506,11 @@
         <button class="mode-btn" id="modeFour" onclick="selectMode('four')">4もじ</button>
       </div>
 
+      <button class="start-btn" id="startBtn" onclick="startGame()" disabled>スタート</button>
 
-      <button class="start-btn" onclick="startGame()">スタート</button>
+      <div class="load-status" id="loadStatus">
+        問題を読み込んでいます。
+      </div>
     </div>
   </div>
 
@@ -536,8 +538,7 @@
   <div class="result-screen" id="resultScreen">
     <div class="result-title">よくできました！</div>
     <div class="result-text" id="resultText">
-      5問クリアしました。<br>
-      タイムも確認してみよう！
+      <div class="time-result-box"><span class="time-label">タイム</span>0.0秒</div>
     </div>
     <div class="button-row">
       <button class="restart-btn" onclick="startGame()">もういちど</button>
@@ -547,48 +548,13 @@
 
   <script>
     const QUESTION_COUNT = 5;
+    const EXCEL_FILE_NAME = "hiragana_questions.xlsx";
 
     const questionBank = {
-      one: [
-        { target: "あ", choices: ["あ", "あ", "あ", "め", "ぬ", "ね", "お", "の"] },
-        { target: "い", choices: ["い", "い", "い", "こ", "り", "し", "け", "に"] },
-        { target: "う", choices: ["う", "う", "う", "つ", "て", "ら", "ろ", "ち"] },
-        { target: "さ", choices: ["さ", "さ", "さ", "ち", "き", "ら", "せ", "く"] },
-        { target: "そ", choices: ["そ", "そ", "そ", "こ", "り", "て", "い", "を"] },
-        { target: "ぬ", choices: ["ぬ", "ぬ", "ぬ", "め", "ね", "あ", "れ", "わ"] },
-        { target: "ね", choices: ["ね", "ね", "ね", "れ", "わ", "ぬ", "め", "は"] },
-        { target: "ま", choices: ["ま", "ま", "ま", "ほ", "も", "は", "ぬ", "め"] }
-      ],
-      two: [
-        { target: "あめ", choices: ["あめ", "あめ", "あめ", "あぬ", "めめ", "ぬめ", "あね", "めぬ"] },
-        { target: "いぬ", choices: ["いぬ", "いぬ", "いぬ", "いめ", "こぬ", "りぬ", "いね", "いめ"] },
-        { target: "うみ", choices: ["うみ", "うみ", "うみ", "つみ", "うぬ", "らみ", "うめ", "ろみ"] },
-        { target: "かさ", choices: ["かさ", "かさ", "かさ", "かち", "さか", "から", "かき", "きさ"] },
-        { target: "くま", choices: ["くま", "くま", "くま", "くぬ", "くほ", "まく", "ぐま", "くも"] },
-        { target: "ねこ", choices: ["ねこ", "ねこ", "ねこ", "ぬこ", "ねご", "れこ", "ねい", "めこ"] },
-        { target: "はな", choices: ["はな", "はな", "はな", "ほな", "はね", "はぬ", "なは", "まな"] },
-        { target: "まめ", choices: ["まめ", "まめ", "まめ", "まぬ", "ほめ", "まね", "めま", "ぬめ"] }
-      ],
-      three: [
-        { target: "だるま", choices: ["だるま", "だるま", "だるま", "たるま", "だろま", "だるよ", "ざるま", "だぬま"] },
-        { target: "さかな", choices: ["さかな", "さかな", "さかな", "さがな", "さかぬ", "ちかな", "さなか", "きかな"] },
-        { target: "すいか", choices: ["すいか", "すいか", "すいか", "すこか", "すいが", "ずいか", "すいけ", "すりか"] },
-        { target: "くるま", choices: ["くるま", "くるま", "くるま", "ぐるま", "くろま", "くるね", "くぬま", "くるほ"] },
-        { target: "りんご", choices: ["りんご", "りんご", "りんご", "りんこ", "りいご", "しんご", "りんぐ", "りこご"] },
-        { target: "きつね", choices: ["きつね", "きつね", "きつね", "きづね", "きつぬ", "きうね", "さつね", "きつれ"] },
-        { target: "たぬき", choices: ["たぬき", "たぬき", "たぬき", "たねき", "だぬき", "たぬさ", "たれき", "たぬぎ"] },
-        { target: "ねずみ", choices: ["ねずみ", "ねずみ", "ねずみ", "れずみ", "ねすみ", "ねぶみ", "ぬずみ", "ねずぬ"] }
-      ],
-      four: [
-        { target: "おにぎり", choices: ["おにぎり", "おにぎり", "おにぎり", "おにきり", "おにざり", "おこぎり", "おにぎし", "あにぎり"] },
-        { target: "たまねぎ", choices: ["たまねぎ", "たまねぎ", "たまねぎ", "だまねぎ", "たまぬぎ", "たまれぎ", "たよねぎ", "たまねき"] },
-        { target: "だいこん", choices: ["だいこん", "だいこん", "だいこん", "たいこん", "だいごん", "だりこん", "だいこい", "ざいこん"] },
-        { target: "にんじん", choices: ["にんじん", "にんじん", "にんじん", "にんしん", "にいじん", "こんじん", "にんごん", "にんじぬ"] },
-        { target: "かぼちゃ", choices: ["かぼちゃ", "かぼちゃ", "かぼちゃ", "かぽちゃ", "かほちゃ", "かぼちや", "かぼさゃ", "かぼちゅ"] },
-        { target: "きゅうり", choices: ["きゅうり", "きゅうり", "きゅうり", "きゆうり", "きゅらり", "きゅうし", "きゅうい", "きゅりう"] },
-        { target: "おまつり", choices: ["おまつり", "おまつり", "おまつり", "おまうり", "おますり", "おまつし", "おまてり", "あまつり"] },
-        { target: "おみやげ", choices: ["おみやげ", "おみやげ", "おみやげ", "おぬやげ", "おみやけ", "おみゃげ", "おみさげ", "あみやげ"] }
-      ]
+      one: [],
+      two: [],
+      three: [],
+      four: []
     };
 
     let selectedMode = "one";
@@ -611,8 +577,119 @@
     const nextCover = document.getElementById("nextCover");
     const resultText = document.getElementById("resultText");
     const timerText = document.getElementById("timerText");
+    const loadStatus = document.getElementById("loadStatus");
+    const startBtn = document.getElementById("startBtn");
 
     questionTotal.textContent = QUESTION_COUNT;
+
+    window.addEventListener("load", () => {
+      loadExcelFromUrl(EXCEL_FILE_NAME);
+    });
+
+    async function loadExcelFromUrl(url) {
+      if (typeof XLSX === "undefined") {
+        loadStatus.textContent = "Excel読み込みライブラリを読み込めませんでした。ネット接続を確認してください。";
+        return;
+      }
+
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("Excel file not found");
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        parseExcel(arrayBuffer);
+      } catch (error) {
+        loadStatus.innerHTML =
+          "問題ファイルを読み込めませんでした。<br>" +
+          "index.html と hiragana_questions.xlsx を同じ場所に置いてください。";
+      }
+    }
+
+    function parseExcel(arrayBuffer) {
+      try {
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        questionBank.one = [];
+        questionBank.two = [];
+        questionBank.three = [];
+        questionBank.four = [];
+
+        rows.forEach(row => {
+          const mode = normalizeMode(row["モード"]);
+          const target = String(row["さがすもの"] || "").trim();
+          const enabled = String(row["出題する"] || "はい").trim();
+
+          if (!mode || !target) return;
+          if (enabled === "いいえ" || enabled.toLowerCase() === "no" || enabled === "0") return;
+
+          const choices = [];
+          for (let i = 1; i <= 8; i++) {
+            const choice = String(row[`選択肢${i}`] || "").trim();
+            if (choice) choices.push(choice);
+          }
+
+          if (choices.length < 8) return;
+
+          const correctCount = choices.filter(choice => choice === target).length;
+
+          // 正解が3つだけの問題だけを使う
+          if (correctCount !== 3) return;
+
+          questionBank[mode].push({
+            target,
+            choices
+          });
+        });
+
+        updateLoadStatus();
+      } catch (error) {
+        loadStatus.textContent = "Excelファイルを読み込めませんでした。列名やファイル形式を確認してください。";
+        startBtn.disabled = true;
+      }
+    }
+
+    function normalizeMode(value) {
+      const text = String(value || "").trim();
+
+      if (text === "1" || text === "1もじ" || text === "1文字" || text === "one") return "one";
+      if (text === "2" || text === "2もじ" || text === "2文字" || text === "two") return "two";
+      if (text === "3" || text === "3もじ" || text === "3文字" || text === "three") return "three";
+      if (text === "4" || text === "4もじ" || text === "4文字" || text === "four") return "four";
+
+      return "";
+    }
+
+    function updateLoadStatus() {
+      const counts = {
+        one: questionBank.one.length,
+        two: questionBank.two.length,
+        three: questionBank.three.length,
+        four: questionBank.four.length
+      };
+
+      const allReady = counts.one >= QUESTION_COUNT &&
+                       counts.two >= QUESTION_COUNT &&
+                       counts.three >= QUESTION_COUNT &&
+                       counts.four >= QUESTION_COUNT;
+
+      loadStatus.innerHTML =
+        `問題を読み込みました。<br>` +
+        `1もじ：${counts.one}問　` +
+        `2もじ：${counts.two}問　` +
+        `3もじ：${counts.three}問　` +
+        `4もじ：${counts.four}問`;
+
+      startBtn.disabled = !allReady;
+
+      if (!allReady) {
+        loadStatus.innerHTML += `<br>各モードに5問以上必要です。`;
+      }
+    }
 
     function selectMode(mode) {
       selectedMode = mode;
@@ -624,7 +701,14 @@
     }
 
     function startGame() {
-      currentQuestions = pickRandomQuestions(questionBank[selectedMode], QUESTION_COUNT);
+      const bank = questionBank[selectedMode];
+
+      if (!bank || bank.length < QUESTION_COUNT) {
+        alert("このモードの問題が足りません。");
+        return;
+      }
+
+      currentQuestions = pickRandomQuestions(bank, QUESTION_COUNT);
       currentQuestionIndex = 0;
 
       menuPage.style.display = "none";
@@ -651,7 +735,7 @@
       locked = false;
 
       questionNumber.textContent = currentQuestionIndex + 1;
-      instruction.innerHTML = `<span class="inline-target">${q.target}</span>を3つ探そう`;
+      instruction.innerHTML = `<span class="inline-target">${escapeHtml(q.target)}</span>を3つ探そう`;
       message.textContent = "同じカードを3つタップしよう";
 
       board.innerHTML = "";
@@ -684,7 +768,7 @@
         if (foundCount < 3) {
           message.textContent = `あと ${3 - foundCount} こ`;
         } else {
-          message.textContent = "できた！";
+          message.textContent = "せいかい！";
           goNextQuestion();
         }
       } else {
@@ -764,6 +848,15 @@
       }
 
       return array;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
   </script>
 </body>
