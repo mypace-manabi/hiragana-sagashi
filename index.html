@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ひらがなさがし</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      background: #f8fafc;
+      color: #1f2937;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    .page {
+      width: 100vw;
+      height: 100vh;
+      padding: 18px;
+    }
+
+    .menu-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .menu-card {
+      width: min(94vw, 840px);
+      background: #ffffff;
+      border: 5px solid #bfdbfe;
+      border-radius: 32px;
+      padding: 34px 28px;
+      text-align: center;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    }
+
+    .menu-title {
+      font-size: 44px;
+      font-weight: 900;
+      color: #2563eb;
+      margin-bottom: 10px;
+      letter-spacing: 0.06em;
+    }
+
+    .menu-subtitle {
+      font-size: 24px;
+      font-weight: 800;
+      color: #475569;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .mode-title {
+      display: inline-block;
+      font-size: 24px;
+      font-weight: 900;
+      color: #9a3412;
+      background: #fff7ed;
+      border-radius: 999px;
+      padding: 8px 22px;
+      margin-bottom: 16px;
+    }
+
+    .mode-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .mode-btn {
+      border: 4px solid #cbd5e1;
+      border-radius: 22px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 22px;
+      font-weight: 900;
+      padding: 18px 8px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #cbd5e1;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mode-btn.selected {
+      background: #eff6ff;
+      border-color: #2563eb;
+      color: #1d4ed8;
+      box-shadow: 0 6px 0 #93c5fd;
+    }
+
+    .mode-btn:active,
+    .start-btn:active,
+    .back-btn:active,
+    .restart-btn:active {
+      transform: translateY(4px);
+    }
+
+    .menu-note {
+      font-size: 21px;
+      font-weight: 800;
+      color: #64748b;
+      margin-bottom: 22px;
+    }
+
+    .start-btn {
+      border: none;
+      border-radius: 999px;
+      background: #f97316;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      padding: 18px 56px;
+      cursor: pointer;
+      box-shadow: 0 7px 0 #c2410c;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .practice-page {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .top-bar {
+      width: min(96vw, 980px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 12px;
+    }
+
+    .title {
+      font-size: 30px;
+      font-weight: 900;
+      color: #2563eb;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .progress {
+      font-size: 22px;
+      font-weight: 800;
+      background: #ffffff;
+      border: 3px solid #dbeafe;
+      border-radius: 999px;
+      padding: 8px 18px;
+      color: #1d4ed8;
+      box-shadow: 0 4px 0 #bfdbfe;
+    }
+
+    .timer {
+      font-size: 22px;
+      font-weight: 800;
+      background: #ffffff;
+      border: 3px solid #fed7aa;
+      border-radius: 999px;
+      padding: 8px 18px;
+      color: #c2410c;
+      box-shadow: 0 4px 0 #fdba74;
+      min-width: 112px;
+      text-align: center;
+    }
+
+    .back-btn {
+      border: none;
+      border-radius: 999px;
+      background: #64748b;
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 900;
+      padding: 10px 24px;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #334155;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .question-card {
+      width: min(96vw, 980px);
+      background: #ffffff;
+      border: 5px solid #bfdbfe;
+      border-radius: 28px;
+      padding: 18px 20px;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      margin-bottom: 14px;
+    }
+
+    .instruction {
+      font-size: 30px;
+      font-weight: 900;
+      color: #334155;
+      line-height: 1.45;
+    }
+
+    .inline-target {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      min-height: 70px;
+      padding: 4px 18px;
+      border: 5px solid #f97316;
+      border-radius: 18px;
+      background: #fff7ed;
+      color: #111827;
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      vertical-align: middle;
+      box-shadow: 0 6px 0 #fed7aa;
+      margin: 0 8px;
+    }
+
+    .message {
+      min-height: 36px;
+      font-size: 24px;
+      font-weight: 900;
+      color: #0f766e;
+      margin: 2px 0 10px;
+      text-align: center;
+    }
+
+    .board {
+      width: min(96vw, 900px);
+      flex: 1;
+      min-height: 0;
+      background: #ffffff;
+      border: 5px solid #e2e8f0;
+      border-radius: 28px;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      align-content: center;
+      box-shadow: inset 0 0 0 6px #f8fafc;
+    }
+
+    .choice {
+      min-height: 96px;
+      border: 4px solid #cbd5e1;
+      border-radius: 20px;
+      background: #ffffff;
+      font-size: 46px;
+      font-weight: 900;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 7px 0 #cbd5e1;
+      transition: transform 0.08s, box-shadow 0.08s, background 0.12s, border-color 0.12s;
+      -webkit-tap-highlight-color: transparent;
+      letter-spacing: 0.04em;
+    }
+
+    .choice.two,
+    .choice.three,
+    .choice.four {
+      font-size: 40px;
+    }
+
+    .choice:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 #cbd5e1;
+    }
+
+    .choice.correct {
+      background: #ffedd5;
+      border-color: #f97316;
+      color: #9a3412;
+      box-shadow: 0 7px 0 #fdba74;
+      pointer-events: none;
+    }
+
+    .choice.wrong {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #991b1b;
+      animation: shake 0.28s;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      50% { transform: translateX(8px); }
+      75% { transform: translateX(-6px); }
+      100% { transform: translateX(0); }
+    }
+
+    .next-cover {
+      position: fixed;
+      inset: 0;
+      background: rgba(248, 250, 252, 0.88);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      font-size: 44px;
+      font-weight: 900;
+      color: #2563eb;
+    }
+
+    .result-screen {
+      display: none;
+      width: min(96vw, 850px);
+      margin: auto;
+      background: #ffffff;
+      border: 5px solid #bfdbfe;
+      border-radius: 30px;
+      padding: 34px;
+      text-align: center;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    }
+
+    .result-title {
+      font-size: 46px;
+      font-weight: 900;
+      color: #f97316;
+      margin-bottom: 12px;
+    }
+
+    .result-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: #334155;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .time-result-box {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 16px 34px;
+      border-radius: 24px;
+      background: #fff7ed;
+      border: 5px solid #f97316;
+      color: #9a3412;
+      font-size: 46px;
+      font-weight: 900;
+      box-shadow: 0 8px 0 #fed7aa;
+    }
+
+    .time-label {
+      display: block;
+      font-size: 22px;
+      color: #c2410c;
+      margin-bottom: 4px;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .restart-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 16px 32px;
+      font-size: 24px;
+      font-weight: 900;
+      cursor: pointer;
+      color: #ffffff;
+      background: #2563eb;
+      box-shadow: 0 6px 0 #1e40af;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .restart-btn.gray {
+      background: #64748b;
+      box-shadow: 0 6px 0 #334155;
+    }
+
+    @media (max-width: 760px) {
+      .mode-buttons {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .top-bar {
+        align-items: flex-start;
+      }
+
+      .title {
+        font-size: 24px;
+      }
+
+      .instruction {
+        font-size: 24px;
+      }
+
+      .inline-target {
+        font-size: 38px;
+        min-height: 58px;
+      }
+
+      .board {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-height: 650px) {
+      .page {
+        padding: 10px;
+      }
+
+      .menu-card {
+        padding: 20px;
+      }
+
+      .menu-title {
+        font-size: 34px;
+      }
+
+      .menu-subtitle {
+        font-size: 20px;
+        margin-bottom: 16px;
+      }
+
+      .mode-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+
+      .mode-buttons {
+        margin-bottom: 16px;
+      }
+
+      .mode-btn {
+        font-size: 18px;
+        padding: 12px 8px;
+      }
+
+      .start-btn {
+        font-size: 26px;
+        padding: 14px 44px;
+      }
+
+      .question-card {
+        padding: 12px;
+        margin-bottom: 8px;
+      }
+
+      .instruction {
+        font-size: 22px;
+      }
+
+      .inline-target {
+        min-height: 54px;
+        font-size: 34px;
+      }
+
+      .message {
+        font-size: 20px;
+        min-height: 28px;
+        margin-bottom: 6px;
+      }
+
+      .board {
+        padding: 14px;
+        gap: 12px;
+      }
+
+      .choice {
+        min-height: 76px;
+        font-size: 38px;
+      }
+
+      .choice.two,
+      .choice.three,
+      .choice.four {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page menu-page" id="menuPage">
+    <div class="menu-card">
+      <div class="menu-title">ひらがなさがし</div>
+
+      <div class="mode-title">むずかしさをえらぼう</div>
+
+      <div class="mode-buttons">
+        <button class="mode-btn selected" id="modeOne" onclick="selectMode('one')">1もじ</button>
+        <button class="mode-btn" id="modeTwo" onclick="selectMode('two')">2もじ</button>
+        <button class="mode-btn" id="modeThree" onclick="selectMode('three')">3もじ</button>
+        <button class="mode-btn" id="modeFour" onclick="selectMode('four')">4もじ</button>
+      </div>
+
+
+      <button class="start-btn" onclick="startGame()">スタート</button>
+    </div>
+  </div>
+
+  <div class="page practice-page" id="practicePage">
+    <div class="top-bar">
+      <div class="title">ひらがなさがし</div>
+      <div class="top-right">
+        <div class="timer" id="timerText">0.0秒</div>
+        <div class="progress"><span id="questionNumber">1</span> / <span id="questionTotal">5</span></div>
+        <button class="back-btn" onclick="backToMenu()">メニュー</button>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="instruction" id="instruction"></div>
+    </div>
+
+    <div class="message" id="message">同じカードを3つタップしよう</div>
+
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="next-cover" id="nextCover">できた！</div>
+
+  <div class="result-screen" id="resultScreen">
+    <div class="result-title">よくできました！</div>
+    <div class="result-text" id="resultText">
+      5問クリアしました。<br>
+      タイムも確認してみよう！
+    </div>
+    <div class="button-row">
+      <button class="restart-btn" onclick="startGame()">もういちど</button>
+      <button class="restart-btn gray" onclick="backToMenu()">メニューにもどる</button>
+    </div>
+  </div>
+
+  <script>
+    const QUESTION_COUNT = 5;
+
+    const questionBank = {
+      one: [
+        { target: "あ", choices: ["あ", "あ", "あ", "め", "ぬ", "ね", "お", "の"] },
+        { target: "い", choices: ["い", "い", "い", "こ", "り", "し", "け", "に"] },
+        { target: "う", choices: ["う", "う", "う", "つ", "て", "ら", "ろ", "ち"] },
+        { target: "さ", choices: ["さ", "さ", "さ", "ち", "き", "ら", "せ", "く"] },
+        { target: "そ", choices: ["そ", "そ", "そ", "こ", "り", "て", "い", "を"] },
+        { target: "ぬ", choices: ["ぬ", "ぬ", "ぬ", "め", "ね", "あ", "れ", "わ"] },
+        { target: "ね", choices: ["ね", "ね", "ね", "れ", "わ", "ぬ", "め", "は"] },
+        { target: "ま", choices: ["ま", "ま", "ま", "ほ", "も", "は", "ぬ", "め"] }
+      ],
+      two: [
+        { target: "あめ", choices: ["あめ", "あめ", "あめ", "あぬ", "めめ", "ぬめ", "あね", "めぬ"] },
+        { target: "いぬ", choices: ["いぬ", "いぬ", "いぬ", "いめ", "こぬ", "りぬ", "いね", "いめ"] },
+        { target: "うみ", choices: ["うみ", "うみ", "うみ", "つみ", "うぬ", "らみ", "うめ", "ろみ"] },
+        { target: "かさ", choices: ["かさ", "かさ", "かさ", "かち", "さか", "から", "かき", "きさ"] },
+        { target: "くま", choices: ["くま", "くま", "くま", "くぬ", "くほ", "まく", "ぐま", "くも"] },
+        { target: "ねこ", choices: ["ねこ", "ねこ", "ねこ", "ぬこ", "ねご", "れこ", "ねい", "めこ"] },
+        { target: "はな", choices: ["はな", "はな", "はな", "ほな", "はね", "はぬ", "なは", "まな"] },
+        { target: "まめ", choices: ["まめ", "まめ", "まめ", "まぬ", "ほめ", "まね", "めま", "ぬめ"] }
+      ],
+      three: [
+        { target: "だるま", choices: ["だるま", "だるま", "だるま", "たるま", "だろま", "だるよ", "ざるま", "だぬま"] },
+        { target: "さかな", choices: ["さかな", "さかな", "さかな", "さがな", "さかぬ", "ちかな", "さなか", "きかな"] },
+        { target: "すいか", choices: ["すいか", "すいか", "すいか", "すこか", "すいが", "ずいか", "すいけ", "すりか"] },
+        { target: "くるま", choices: ["くるま", "くるま", "くるま", "ぐるま", "くろま", "くるね", "くぬま", "くるほ"] },
+        { target: "りんご", choices: ["りんご", "りんご", "りんご", "りんこ", "りいご", "しんご", "りんぐ", "りこご"] },
+        { target: "きつね", choices: ["きつね", "きつね", "きつね", "きづね", "きつぬ", "きうね", "さつね", "きつれ"] },
+        { target: "たぬき", choices: ["たぬき", "たぬき", "たぬき", "たねき", "だぬき", "たぬさ", "たれき", "たぬぎ"] },
+        { target: "ねずみ", choices: ["ねずみ", "ねずみ", "ねずみ", "れずみ", "ねすみ", "ねぶみ", "ぬずみ", "ねずぬ"] }
+      ],
+      four: [
+        { target: "おにぎり", choices: ["おにぎり", "おにぎり", "おにぎり", "おにきり", "おにざり", "おこぎり", "おにぎし", "あにぎり"] },
+        { target: "たまねぎ", choices: ["たまねぎ", "たまねぎ", "たまねぎ", "だまねぎ", "たまぬぎ", "たまれぎ", "たよねぎ", "たまねき"] },
+        { target: "だいこん", choices: ["だいこん", "だいこん", "だいこん", "たいこん", "だいごん", "だりこん", "だいこい", "ざいこん"] },
+        { target: "にんじん", choices: ["にんじん", "にんじん", "にんじん", "にんしん", "にいじん", "こんじん", "にんごん", "にんじぬ"] },
+        { target: "かぼちゃ", choices: ["かぼちゃ", "かぼちゃ", "かぼちゃ", "かぽちゃ", "かほちゃ", "かぼちや", "かぼさゃ", "かぼちゅ"] },
+        { target: "きゅうり", choices: ["きゅうり", "きゅうり", "きゅうり", "きゆうり", "きゅらり", "きゅうし", "きゅうい", "きゅりう"] },
+        { target: "おまつり", choices: ["おまつり", "おまつり", "おまつり", "おまうり", "おますり", "おまつし", "おまてり", "あまつり"] },
+        { target: "おみやげ", choices: ["おみやげ", "おみやげ", "おみやげ", "おぬやげ", "おみやけ", "おみゃげ", "おみさげ", "あみやげ"] }
+      ]
+    };
+
+    let selectedMode = "one";
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let foundCount = 0;
+    let locked = false;
+    let startTime = 0;
+    let timerInterval = null;
+    let finalTime = 0;
+
+    const menuPage = document.getElementById("menuPage");
+    const practicePage = document.getElementById("practicePage");
+    const resultScreen = document.getElementById("resultScreen");
+    const board = document.getElementById("board");
+    const instruction = document.getElementById("instruction");
+    const message = document.getElementById("message");
+    const questionNumber = document.getElementById("questionNumber");
+    const questionTotal = document.getElementById("questionTotal");
+    const nextCover = document.getElementById("nextCover");
+    const resultText = document.getElementById("resultText");
+    const timerText = document.getElementById("timerText");
+
+    questionTotal.textContent = QUESTION_COUNT;
+
+    function selectMode(mode) {
+      selectedMode = mode;
+
+      document.getElementById("modeOne").classList.toggle("selected", mode === "one");
+      document.getElementById("modeTwo").classList.toggle("selected", mode === "two");
+      document.getElementById("modeThree").classList.toggle("selected", mode === "three");
+      document.getElementById("modeFour").classList.toggle("selected", mode === "four");
+    }
+
+    function startGame() {
+      currentQuestions = pickRandomQuestions(questionBank[selectedMode], QUESTION_COUNT);
+      currentQuestionIndex = 0;
+
+      menuPage.style.display = "none";
+      resultScreen.style.display = "none";
+      practicePage.style.display = "flex";
+
+      showQuestion();
+      startTimer();
+    }
+
+    function backToMenu() {
+      locked = true;
+      stopTimer();
+      nextCover.style.display = "none";
+      practicePage.style.display = "none";
+      resultScreen.style.display = "none";
+      menuPage.style.display = "flex";
+      message.textContent = "同じカードを3つタップしよう";
+    }
+
+    function showQuestion() {
+      const q = currentQuestions[currentQuestionIndex];
+      foundCount = 0;
+      locked = false;
+
+      questionNumber.textContent = currentQuestionIndex + 1;
+      instruction.innerHTML = `<span class="inline-target">${q.target}</span>を3つ探そう`;
+      message.textContent = "同じカードを3つタップしよう";
+
+      board.innerHTML = "";
+
+      const shuffledChoices = shuffleArray([...q.choices]);
+
+      shuffledChoices.forEach((choiceText) => {
+        const card = document.createElement("button");
+        card.className = "choice " + selectedMode;
+        card.type = "button";
+        card.textContent = choiceText;
+
+        card.addEventListener("click", () => {
+          checkChoice(card, choiceText);
+        });
+
+        board.appendChild(card);
+      });
+    }
+
+    function checkChoice(card, choiceText) {
+      if (locked || card.classList.contains("correct")) return;
+
+      const q = currentQuestions[currentQuestionIndex];
+
+      if (choiceText === q.target) {
+        card.classList.add("correct");
+        foundCount++;
+
+        if (foundCount < 3) {
+          message.textContent = `あと ${3 - foundCount} こ`;
+        } else {
+          message.textContent = "できた！";
+          goNextQuestion();
+        }
+      } else {
+        card.classList.add("wrong");
+        message.textContent = "ちがうよ。もう一度さがそう";
+
+        setTimeout(() => {
+          card.classList.remove("wrong");
+        }, 450);
+      }
+    }
+
+    function goNextQuestion() {
+      locked = true;
+      nextCover.style.display = "flex";
+
+      setTimeout(() => {
+        nextCover.style.display = "none";
+        currentQuestionIndex++;
+
+        if (currentQuestionIndex >= currentQuestions.length) {
+          showResult();
+        } else {
+          showQuestion();
+        }
+      }, 850);
+    }
+
+    function showResult() {
+      stopTimer();
+      finalTime = getElapsedSeconds();
+
+      practicePage.style.display = "none";
+      resultText.innerHTML =
+        `<div class="time-result-box"><span class="time-label">タイム</span>${formatTime(finalTime)}</div>`;
+      resultScreen.style.display = "block";
+    }
+
+    function startTimer() {
+      stopTimer();
+      startTime = Date.now();
+      finalTime = 0;
+      updateTimer();
+
+      timerInterval = setInterval(updateTimer, 100);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function getElapsedSeconds() {
+      if (!startTime) return 0;
+      return (Date.now() - startTime) / 1000;
+    }
+
+    function updateTimer() {
+      timerText.textContent = formatTime(getElapsedSeconds());
+    }
+
+    function formatTime(seconds) {
+      return `${seconds.toFixed(1)}秒`;
+    }
+
+    function pickRandomQuestions(bank, count) {
+      const shuffled = shuffleArray([...bank]);
+      return shuffled.slice(0, count);
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+
+      return array;
+    }
+  </script>
+</body>
+</html>
