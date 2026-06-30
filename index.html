@@ -27,7 +27,13 @@
     .page {
       width: 100vw;
       height: 100vh;
-      padding: 18px;
+      height: 100dvh;
+      padding: clamp(8px, 2vh, 18px);
+    }
+
+    /* iPad・Chromeでの見切れ対策 */
+    .practice-page {
+      overflow: hidden;
     }
 
     .menu-page {
@@ -43,7 +49,7 @@
       background: #ffffff;
       border: 5px solid #bfdbfe;
       border-radius: 32px;
-      padding: 34px 28px;
+      padding: clamp(18px, 3vh, 34px) 28px;
       text-align: center;
       box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
     }
@@ -121,11 +127,16 @@
     }
 
     .load-status {
+      display: none;
       font-size: 18px;
       font-weight: 800;
       color: #475569;
       margin-top: 18px;
       line-height: 1.5;
+    }
+
+    .load-status.error {
+      display: block;
     }
 
     .practice-page {
@@ -139,8 +150,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: clamp(4px, 1vh, 8px);
       gap: 12px;
+      flex-shrink: 0;
     }
 
     .title {
@@ -201,31 +213,32 @@
       background: #ffffff;
       border: 5px solid #bfdbfe;
       border-radius: 28px;
-      padding: 18px 20px;
+      padding: clamp(10px, 2vh, 18px) 20px;
       text-align: center;
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-      margin-bottom: 14px;
+      margin-bottom: clamp(6px, 1.4vh, 14px);
+      flex-shrink: 0;
     }
 
     .instruction {
-      font-size: 30px;
+      font-size: clamp(22px, 3.8vh, 30px);
       font-weight: 900;
       color: #334155;
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
     .inline-target {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 92px;
-      min-height: 70px;
+      min-width: clamp(70px, 12vw, 92px);
+      min-height: clamp(50px, 8vh, 70px);
       padding: 4px 18px;
       border: 5px solid #f97316;
       border-radius: 18px;
       background: #fff7ed;
       color: #111827;
-      font-size: 48px;
+      font-size: clamp(34px, 6vh, 48px);
       font-weight: 900;
       letter-spacing: 0.04em;
       vertical-align: middle;
@@ -234,12 +247,13 @@
     }
 
     .message {
-      min-height: 36px;
-      font-size: 24px;
+      min-height: clamp(26px, 4vh, 36px);
+      font-size: clamp(18px, 3vh, 24px);
       font-weight: 900;
       color: #0f766e;
-      margin: 2px 0 10px;
+      margin: 2px 0 clamp(4px, 1.2vh, 10px);
       text-align: center;
+      flex-shrink: 0;
     }
 
     .board {
@@ -249,20 +263,20 @@
       background: #ffffff;
       border: 5px solid #e2e8f0;
       border-radius: 28px;
-      padding: 22px;
+      padding: clamp(10px, 2vh, 22px);
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: clamp(8px, 1.6vh, 16px);
       align-content: center;
       box-shadow: inset 0 0 0 6px #f8fafc;
     }
 
     .choice {
-      min-height: 96px;
+      min-height: clamp(64px, 12vh, 96px);
       border: 4px solid #cbd5e1;
       border-radius: 20px;
       background: #ffffff;
-      font-size: 46px;
+      font-size: clamp(32px, 6.2vh, 46px);
       font-weight: 900;
       color: #111827;
       display: flex;
@@ -273,12 +287,13 @@
       transition: transform 0.08s, box-shadow 0.08s, background 0.12s, border-color 0.12s;
       -webkit-tap-highlight-color: transparent;
       letter-spacing: 0.04em;
+      line-height: 1;
     }
 
     .choice.two,
     .choice.three,
     .choice.four {
-      font-size: 40px;
+      font-size: clamp(28px, 5.4vh, 40px);
     }
 
     .choice:active {
@@ -392,6 +407,43 @@
     .restart-btn.gray {
       background: #64748b;
       box-shadow: 0 6px 0 #334155;
+    }
+
+
+    @media (max-height: 820px) and (min-width: 700px) {
+      .page {
+        padding: 8px;
+      }
+
+      .title {
+        font-size: 24px;
+      }
+
+      .timer,
+      .progress {
+        font-size: 18px;
+        padding: 6px 14px;
+      }
+
+      .back-btn {
+        font-size: 18px;
+        padding: 8px 20px;
+      }
+
+      .question-card {
+        border-width: 4px;
+        border-radius: 22px;
+      }
+
+      .board {
+        border-width: 4px;
+        border-radius: 22px;
+        max-height: calc(100dvh - 210px);
+      }
+
+      .choice {
+        min-height: 68px;
+      }
     }
 
     @media (max-width: 760px) {
@@ -508,9 +560,7 @@
 
       <button class="start-btn" id="startBtn" onclick="startGame()" disabled>スタート</button>
 
-      <div class="load-status" id="loadStatus">
-        問題を読み込んでいます。
-      </div>
+      <div class="load-status" id="loadStatus"></div>
     </div>
   </div>
 
@@ -588,6 +638,7 @@
 
     async function loadExcelFromUrl(url) {
       if (typeof XLSX === "undefined") {
+        loadStatus.classList.add("error");
         loadStatus.textContent = "Excel読み込みライブラリを読み込めませんでした。ネット接続を確認してください。";
         return;
       }
@@ -601,6 +652,7 @@
         const arrayBuffer = await response.arrayBuffer();
         parseExcel(arrayBuffer);
       } catch (error) {
+        loadStatus.classList.add("error");
         loadStatus.innerHTML =
           "問題ファイルを読み込めませんでした。<br>" +
           "index.html と hiragana_questions.xlsx を同じ場所に置いてください。";
@@ -648,6 +700,7 @@
 
         updateLoadStatus();
       } catch (error) {
+        loadStatus.classList.add("error");
         loadStatus.textContent = "Excelファイルを読み込めませんでした。列名やファイル形式を確認してください。";
         startBtn.disabled = true;
       }
@@ -677,17 +730,14 @@
                        counts.three >= QUESTION_COUNT &&
                        counts.four >= QUESTION_COUNT;
 
-      loadStatus.innerHTML =
-        `問題を読み込みました。<br>` +
-        `1もじ：${counts.one}問　` +
-        `2もじ：${counts.two}問　` +
-        `3もじ：${counts.three}問　` +
-        `4もじ：${counts.four}問`;
-
       startBtn.disabled = !allReady;
 
-      if (!allReady) {
-        loadStatus.innerHTML += `<br>各モードに5問以上必要です。`;
+      if (allReady) {
+        loadStatus.classList.remove("error");
+        loadStatus.textContent = "";
+      } else {
+        loadStatus.classList.add("error");
+        loadStatus.innerHTML = "問題数が足りません。各モードに5問以上必要です。";
       }
     }
 
